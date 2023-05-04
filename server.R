@@ -4,25 +4,16 @@ library(eulerr)
 shinyServer(function(input, output, session) {
   inserted <- c()
 
-  # output citation information
-  eulerr_cit <- citation("eulerr")
-  output$cit <- renderPrint({
-    print(citation("eulerr"), style = "html")
-  })
-  output$bib <- renderPrint({
-    print(citation("eulerr"), style = "Bibtex")
-  })
-
-  observeEvent(input$insert_set, {
+ observeEvent(input$insert_set, {
     btn <- input$insert_set
     id <- paste0("txt", btn)
     insertUI(
       selector = "#placeholder",
       ui = tags$div(
         splitLayout(
-          cellWidths = c("70%", "30%"),
+          cellWidths = c("10%", "90%"),
           textInput(paste0("combo_", id), NULL, NULL),
-          numericInput(paste0("size_", id), NULL, NULL, min = 0),
+          textAreaInput(paste0("size_", id), NULL, NULL),
           id = id
         )
       )
@@ -56,19 +47,34 @@ shinyServer(function(input, output, session) {
       grep("combo_", x = names(input), value = TRUE),
       function(x) input[[x]]
     )
+    #print(sets)
     size <- sapply(
       grep("size_", x = names(input), value = TRUE),
       function(x) input[[x]]
     )
-
-    combinations <- as.vector(size, mode = "double")
-    sets <- sets[order(names(sets))]
-    combinations <- combinations[order(names(size))]
-
-    combo_names <- strsplit(sets, split = "&", fixed = TRUE)
-    setnames <- unique(unlist(combo_names, use.names = FALSE))
-    n_sets <- length(setnames)
-
+    splitProteins <- function(proteins) {
+      proteins <- toupper(proteins)
+      proteins <- gsub(",", " ", proteins)
+      proteins <- gsub("[\t\r\n]", " ", proteins)
+      proteins <- trimws(gsub("\\s+", " ", proteins))
+      proteins <- strsplit(proteins, " ")
+      proteins <- na.omit(proteins)
+      #proteins <- proteins[!duplicated(proteins)]
+      return(proteins)
+    }
+    combinations <- list()
+    for(i in 1:5){
+      proteinL <- splitProteins(size[paste0("size_",i)])
+      proteinL <- unique(proteinL)
+      if(proteinL=="character(0)"){next}#proteinL,character(0))){#(length(proteinL) == 0) && (typeof(proteinL) == "character")
+      else{
+        names(proteinL)=paste0('ID:',i,' ',sets[paste0("combo_",i)])
+        combinations<-c(combinations,proteinL)
+      }
+    }
+    #print(combinations)
+    n_sets <- length(combinations)
+    #print(n_sets)
     validate(
       need(
         n_sets <= 5,
@@ -78,22 +84,13 @@ shinyServer(function(input, output, session) {
         )
       )
     )
-
-    names(combinations) <- sets
     na.omit(combinations)
   })
 
   euler_fit <- reactive({
-    combinations <- get_combinations()
-
+    proteinList <- get_combinations()
     set.seed(input$seed)
-
-    euler(
-      combinations,
-      input = input$input_type,
-      shape = input$shape,
-      control = list(extraopt = FALSE)
-    )
+    plot(euler(proteinList,shape=input$shape), quantities=TRUE)
   })
 
   output$table <- renderTable({
@@ -125,15 +122,6 @@ shinyServer(function(input, output, session) {
 
     if (!(input$fill == ""))
       ll$fills$fill <- gsub("^\\s+|\\s+$", "", unlist(strsplit(input$fill, ",")))
-    if (input$legend)
-      ll$legend <- list(side = input$legend_side)
-    ll$labels$font <- switch(
-      input$font,
-      Plain = 1,
-      Bold = 2,
-      Italic = 3,
-      "Bold italic" = 4
-    )
     ll$quantities <- input$quantities
     ll$fills$alpha <- input$alpha
     ll$edges$lty <- switch(input$borders, Solid = 1, Varying = 1:6, None = 0)
@@ -152,24 +140,7 @@ shinyServer(function(input, output, session) {
       paste0("euler-", Sys.Date(), ".", input$savetype)
     },
     content = function(file) {
-      switch(
-        input$savetype,
-        pdf = pdf(
-          file,
-          width = input$width,
-          height = input$height,
-          pointsize = input$pointsize
-        ),
-        png = png(
-          file,
-          type = "cairo",
-          width = input$width,
-          height = input$height,
-          pointsize = input$pointsize,
-          units = "in",
-          res = 300
-        )
-      )
+
       print(euler_plot())
       dev.off()
     }
