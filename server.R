@@ -53,26 +53,28 @@ shinyServer(function(input, output, session) {
       function(x) input[[x]]
     )
     splitProteins <- function(proteins) {
+      proteins <- na.omit(proteins)
       proteins <- toupper(proteins)
       proteins <- gsub(",", " ", proteins)
       proteins <- gsub("[\t\r\n]", " ", proteins)
       proteins <- trimws(gsub("\\s+", " ", proteins))
       proteins <- strsplit(proteins, " ")
-      proteins <- na.omit(proteins)
-      #proteins <- proteins[!duplicated(proteins)]
       return(proteins)
     }
     combinations <- list()
+    combinationsC <- list()
     for(i in 1:5){
       proteinL <- splitProteins(size[paste0("size_",i)])
-      proteinL <- unique(proteinL)
-      if(proteinL=="character(0)"){next}#proteinL,character(0))){#(length(proteinL) == 0) && (typeof(proteinL) == "character")
+      if(proteinL=="character(0)"){next}
       else{
-        names(proteinL)=paste0('ID:',i,' ',sets[paste0("combo_",i)])
+        proteinS <- data.frame(table(proteinL))[2]
+        combinationsC<-c(combinationsC,list(t(proteinS)))
+        proteinL=list(t(data.frame(table(proteinL))[1]))
+        names(proteinL)=paste0(sets[paste0("combo_",i)],"#",sum(proteinS))
         combinations<-c(combinations,proteinL)
       }
     }
-    #print(combinations)
+    print(combinationsC)
     n_sets <- length(combinations)
     #print(n_sets)
     validate(
@@ -124,7 +126,7 @@ shinyServer(function(input, output, session) {
       ll$fills$fill <- gsub("^\\s+|\\s+$", "", unlist(strsplit(input$fill, ",")))
     ll$quantities <- input$quantities
     ll$fills$alpha <- input$alpha
-    ll$edges$lty <- switch(input$borders, Solid = 1, Varying = 1:6, None = 0)
+    #ll$edges$lty <- switch(input$borders, Solid = 1, Varying = 1:6, None = 0)
     eulerr_options(pointsize = input$pointsize)
 
     do.call(plot, ll)
