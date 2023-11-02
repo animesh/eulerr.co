@@ -74,7 +74,22 @@ shinyServer(function(input, output, session) {
         combinations<-c(combinations,proteinL)
       }
     }
-    print(combinationsC)
+    combinationsA <- list()
+    for(i in 1:length(combinationsC)){
+      combinationsT<-combinations[i]
+      for(j in 1:length(combinationsC)){
+        if(i<j){
+          print(names(combinations[i]))
+          print(names(combinations[j]))
+          print(intersect(unlist(combinations[i]),unlist(combinations[j])))
+          combinationsT<-setdiff(unlist(combinationsT),unlist(combinations[j]))
+        }
+      }
+      combinationsT
+      names(combinationsT)=names(combinations[i])
+      combinationsA<-c(combinationsA,combinationsT)
+      }
+    print(combinationsA)
     n_sets <- length(combinations)
     #print(n_sets)
     validate(
