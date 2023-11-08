@@ -63,7 +63,7 @@ shinyServer(function(input, output, session) {
     }
     combinations <- list()
     combinationsC <- list()
-    for(i in 1:5){
+    for(i in 1:6){
       proteinL <- splitProteins(size[paste0("size_",i)])
       if(proteinL=="character(0)"){next}
       else{
@@ -74,29 +74,30 @@ shinyServer(function(input, output, session) {
         combinations<-c(combinations,proteinL)
       }
     }
-    combinationsA <- list()
-    for(i in 1:length(combinationsC)){
-      combinationsT<-combinations[i]
-      for(j in 1:length(combinationsC)){
-        if(i<j){
-          print(names(combinations[i]))
-          print(names(combinations[j]))
-          print(intersect(unlist(combinations[i]),unlist(combinations[j])))
-          combinationsT<-setdiff(unlist(combinationsT),unlist(combinations[j]))
-        }
-      }
-      combinationsT
-      names(combinationsT)=names(combinations[i])
-      combinationsA<-c(combinationsA,combinationsT)
-      }
-    print(combinationsA)
+    #combinationsA <- list()
+    #for(i in 1:length(combinationsC)){
+     # print(names(combinations[i]))
+      #combinationsT<-combinations[i]
+      #for(j in 1:length(combinationsC)){
+        #if(i<j){
+          #print(names(combinations[j]))
+          #print(intersect(unlist(combinations[i]),unlist(combinations[j])))
+          #combinationsT<-setdiff(unlist(combinationsT),unlist(combinations[j]))
+        #}
+      #}
+      #names(combinationsT)=names(combinations[i])
+      #print(combinationsT)
+      #combinationsA<-c(combinationsA,combinationsT)
+      #}
+    #print(combinationsA)
+    #print(euler(combinations,shape=input$shape))
     n_sets <- length(combinations)
     #print(n_sets)
     validate(
       need(
-        n_sets <= 5,
+        n_sets <= 6,
         paste0(
-          "This Shiny app only allows combinations with five or fewer sets. ",
+          "This Shiny app only allows combinations with six or fewer sets. ",
           "Please use the R package if you need more sets."
         )
       )
@@ -108,15 +109,19 @@ shinyServer(function(input, output, session) {
     proteinList <- get_combinations()
     set.seed(input$seed)
     plot(euler(proteinList,shape=input$shape), quantities=TRUE)
+    #print(pEuler)
   })
+  output$euler_table <- renderTable({
+    data.frame(pEuler$original, pEuler$fitted, pEuler$regionError)
+  }, rownames = TRUE, width = "100%")
 
   output$table <- renderTable({
-    f <- euler_fit()
+    f <- c(1,2,3)
     df <- with(
       f,
       data.frame(
-        Input = original.values,
-        Fit = fitted.values,
+        Input = original,
+        Fit = fitted,
         Error = regionError
       )
     )
@@ -131,6 +136,7 @@ shinyServer(function(input, output, session) {
   output$diagError <- renderText({
     round(euler_fit()$diagError, 2)
   })
+
 
   euler_plot <- reactive({
     ll <- list()
