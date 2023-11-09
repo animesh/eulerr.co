@@ -116,17 +116,7 @@ shinyServer(function(input, output, session) {
   }, rownames = TRUE, width = "100%")
 
   output$table <- renderTable({
-    f <- c(1,2,3)
-    df <- with(
-      f,
-      data.frame(
-        Input = original,
-        Fit = fitted,
-        Error = regionError
-      )
-    )
-    colnames(df) <- c("Input", "Fit", "regionError")
-    df
+    print(round(euler(get_combinations())$original))
   }, rownames = TRUE, width = "100%")
 
   output$stress <- renderText({
