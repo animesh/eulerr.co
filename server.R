@@ -63,14 +63,14 @@ shinyServer(function(input, output, session) {
     }
     combinations <- list()
     combinationsC <- list()
-    for(i in 1:6){
+    for(i in 1:length(sets)){
       proteinL <- splitProteins(size[paste0("size_",i)])
       if(proteinL=="character(0)"){next}
       else{
         proteinS <- data.frame(table(proteinL))[2]
         combinationsC<-c(combinationsC,list(t(proteinS)))
         proteinL=list(t(data.frame(table(proteinL))[1]))
-        names(proteinL)=paste0(sets[paste0("combo_",i)],"#",sum(proteinS))
+        names(proteinL)=paste0(sets[paste0("combo_",i)],"-",sum(proteinS))
         combinations<-c(combinations,proteinL)
       }
     }
@@ -118,6 +118,43 @@ shinyServer(function(input, output, session) {
   output$table <- renderTable({
     print(round(euler(get_combinations())$original))
   }, rownames = TRUE, width = "100%")
+
+  output$ids <- renderTable({
+    proteinLists<-get_combinations()
+    #dim(proteinLists)
+    proteinOverlap<-data.frame()
+    #for(l1 in 1:length(proteinLists)){
+      #for(l2 in 1:length(proteinLists)){
+        #if(l1<l2 & length(intersect(unlist(proteinLists[l1]),unlist(proteinLists[l2])))>0){
+          #proteinOverlap<-rbind(proteinOverlap,data.frame("Group1"=names(proteinLists[l1]),"Group2"=names(proteinLists[l2]),"Overlap"=paste(intersect(unlist(proteinLists[l1]),unlist(proteinLists[l2])),collapse = ";")))
+          #print(names(proteinLists[l1]))
+          #print(names(proteinLists[l2]))
+          #print(intersect(unlist(proteinLists[l1]),unlist(proteinLists[l2])))
+          #print("\n")}}}
+    for(combo in 2:length(proteinLists)){
+      comboList<-combn(names(proteinLists),combo)
+      #print(combo)
+      #print(ncol(comboList))
+      #comIDs<-()
+      for(nCol in 1:ncol(comboList)){
+        #print(c(proteinLists[comboList[,nCol]]))
+        #print(comboList[,nCol])
+        comIDs<-c(proteinLists[[comboList[,nCol][1]]])
+        #print(comIDs)
+        for(nColVal in 2:length(comboList[,nCol])){
+          comIDs<-intersect(comIDs,proteinLists[[comboList[,nCol][nColVal]]])
+        }
+        #print(comIDs)
+        proteinOverlap<-rbind(proteinOverlap,data.frame("Group"=paste(comboList[,nCol],collapse = ";"),"Overlap"=paste(comIDs,collapse = ";")))
+        #print(Reduce(intersect,list(proteinLists[comboList[,nCol]])))
+        #print(intersect(unlist(proteinLists[comboList[,nCol]])))
+      }
+      #print(paste(comboList,collapse = ";"))
+      #Reduce(intersect,list(c("1","2"),c("1","3"),c("1","3")))
+    }
+    proteinOverlap
+
+  })
 
   output$stress <- renderText({
     round(euler_fit()$stress, 2)
